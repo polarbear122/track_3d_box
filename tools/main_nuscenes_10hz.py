@@ -19,7 +19,7 @@ parser.add_argument('--visualize', action='store_true', default=False)
 parser.add_argument('--start_frame', type=int, default=0, help='start at a middle frame for debug')
 parser.add_argument('--obj_types', default='car,bus,trailer,truck,pedestrian,bicycle,motorcycle')
 # paths
-parser.add_argument('--config_path', type=str, default='configs/config.yaml', help='config file path, follow the path in the documentation')
+parser.add_argument('--config_path', type=str, default='configs/config.yaml')
 parser.add_argument('--result_folder', type=str, default='/mnt/truenas/scratch/ziqi.pang/10hz_exps/')
 parser.add_argument('--data_folder', type=str, default='/mnt/truenas/scratch/ziqi.pang/datasets/nuscenes/')
 args = parser.parse_args()
@@ -123,7 +123,7 @@ def main(name, obj_types, config_path, data_folder, det_data_folder, result_fold
         file_names = sorted(os.listdir(os.path.join(data_folder, 'ego_info')))
         
         # load model configs
-        configs = yaml.load(open(config_path, 'r'), Loader=yaml.Loader)
+        configs = yaml.load(open(config_path, 'r'))
     
         for file_index, file_name in enumerate(file_names[:]):
             if file_index % process != token:
