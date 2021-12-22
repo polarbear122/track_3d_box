@@ -15,10 +15,9 @@ parser.add_argument('--visualize', action='store_true', default=False)
 parser.add_argument('--start_frame', type=int, default=0, help='start at a middle frame for debug')
 parser.add_argument('--obj_type', type=str, default='vehicle', choices=['vehicle', 'pedestrian', 'cyclist'])
 # paths
-parser.add_argument('--config_path', type=str, default='configs/config.yaml', help='config file path, follow the path in the documentation')
+parser.add_argument('--config_path', type=str, default='configs/config.yaml')
 parser.add_argument('--result_folder', type=str, default='../mot_results/')
 parser.add_argument('--data_folder', type=str, default='../datasets/waymo/mot/')
-parser.add_argument('--gt_folder', type=str, default='../datasets/waymo/mot/detection/gt/dets/')
 args = parser.parse_args()
 
 
@@ -60,8 +59,7 @@ def frame_visualization(bboxes, ids, states, gt_bboxes=None, gt_ids=None, pc=Non
             visualizer.handler_box(bbox, message=str(id), color='red')
         else:
             visualizer.handler_box(bbox, message=str(id), color='light_blue')
-    # visualizer.show()
-    visualizer.save('imgs/{:}.png'.format(name))
+    visualizer.show()
     visualizer.close()
 
 
@@ -102,10 +100,9 @@ def main(name, obj_type, config_path, data_folder, det_data_folder, result_folde
     summary_folder = os.path.join(result_folder, 'summary', obj_type)
     # simply knowing about all the segments
     file_names = sorted(os.listdir(os.path.join(data_folder, 'ego_info')))
-    print(file_names[0])
 
     # load model configs
-    configs = yaml.load(open(config_path, 'r'), Loader=yaml.Loader)
+    configs = yaml.load(open(config_path, 'r'))
     
     if obj_type == 'vehicle':
         type_token = 1
