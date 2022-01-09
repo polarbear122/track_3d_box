@@ -2,11 +2,9 @@
 
 ## Data Preprocessing
 
-Please follow the command at [Data Preprocessing Documentations](./data_preprocess.md). After data preprocessing, the directories to the preprocessed data are `nuscenes2hz_data_dir` and `nuscenes20hz_data_dir` for the key-frame and all-frame data of nuScenes.
+Please follow the command at [Data Preprocessing Documentations](./docs/data_preprocess.md). After data preprocessing, the directories to the preprocessed data are `nuscenes2hz_data_dir` and `nuscenes20hz_data_dir` for the key-frame and all-frame data of nuScenes.
 
 ## Inference with SimpleTrack
-
-**Important: Please strictly follow the config file we use.**
 
 For the setting of inference only on key frames (2Hz), run the following command. The per-sequence results are then saved in the `${nuscenes_result_dir}/SimpleTrack2Hz/summary`, with subfolders of the types of the objects containing the results for each type.
 
@@ -47,7 +45,7 @@ For the setting of 2Hz, which only inferences on the key frames, run the followi
 ```bash
 python tools/nuscenes_result_creation.py \
     --name SimpleTrack2Hz \
-    --result_folder ${nuscenes_result_dir} \
+    --name result_folder ${nuscenes_result_dir} \
     --data_folder ${nuscenes2hz_data_dir}
 
 python tools/nuscenes_type_merge.py \
@@ -60,14 +58,10 @@ For the setting of 10Hz, run the following commands.
 ```bash
 python tools/nuscenes_result_creation_10hz.py \
     --name SimpleTrack10Hz \
-    --result_folder ${nuscenes_result_dir} \
+    --name result_folder ${nuscenes_result_dir} \
     --data_folder ${nuscenes20hz_data_dir}
 
 python tools/nuscenes_type_merge.py \
     --name SimpleTrack10Hz \
     --result_folder ${nuscenes_result_dir}
 ```
-
-## Files and Detailed Metrics
-
-Please see [Dropbox Link](https://www.dropbox.com/sh/8906exnes0u5e89/AAD0xLwW1nq_QiuUBaYDrQVna?dl=0).
