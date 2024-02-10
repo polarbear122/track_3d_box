@@ -22,6 +22,8 @@ parser.add_argument('--obj_types', default='car,bus,trailer,truck,pedestrian,bic
 parser.add_argument('--config_path', type=str, default='configs/config.yaml', help='config file path, follow the path in the documentation')
 parser.add_argument('--result_folder', type=str, default='../nu_mot_results/')
 parser.add_argument('--data_folder', type=str, default='../datasets/nuscenes/')
+
+parser.add_argument('--test', action='store_true', default=False)
 args = parser.parse_args()
 
 
@@ -37,16 +39,19 @@ def nu_array2mot_bbox(b):
     return mot_bbox
 
 
-def load_gt_bboxes(data_folder, type_token, segment_name):
-    gt_info = np.load(os.path.join(data_folder, 'gt_info', '{:}.npz'.format(segment_name)), allow_pickle=True)
+def load_gt_bboxes(data_folder, type_token, segment_name, test):
+    if test:
+        gt_info = np.load(os.path.join(data_folder, 'gt_info_test', '{:}.npz'.format(segment_name)), allow_pickle=True)
+    else:
+        gt_info = np.load(os.path.join(data_folder, 'gt_info', '{:}.npz'.format(segment_name)), allow_pickle=True)
     ids, inst_types, bboxes = gt_info['ids'], gt_info['types'], gt_info['bboxes']
-    
+
     mot_bboxes = list()
     for _, frame_bboxes in enumerate(bboxes):
         mot_bboxes.append([])
         for _, b in enumerate(frame_bboxes):
             mot_bboxes[-1].append(BBox.bbox2array(nu_array2mot_bbox(b)))
-    gt_ids, gt_bboxes = utils.inst_filter(ids, mot_bboxes, inst_types, 
+    gt_ids, gt_bboxes = utils.inst_filter(ids, mot_bboxes, inst_types,
         type_field=type_token, id_trans=True)
     return gt_bboxes, gt_ids
 
@@ -75,14 +80,13 @@ def sequence_mot(configs, data_loader, obj_type, sequence_id, gt_bboxes=None, gt
     tracker = MOTModel(configs)
     frame_num = len(data_loader)
     IDs, bboxes, states, types = list(), list(), list(), list()
-
     for frame_index in range(data_loader.cur_frame, frame_num):
         if frame_index % 10 == 0:
             print('TYPE {:} SEQ {:} Frame {:} / {:}'.format(obj_type, sequence_id, frame_index + 1, frame_num))
-        
+
         # input data
         frame_data = next(data_loader)
-        frame_data = FrameData(dets=frame_data['dets'], ego=frame_data['ego'], pc=frame_data['pc'], 
+        frame_data = FrameData(dets=frame_data['dets'], ego=frame_data['ego'], pc=frame_data['pc'],
             det_types=frame_data['det_types'], aux_info=frame_data['aux_info'], time_stamp=frame_data['time_stamp'])
 
         # mot
@@ -96,7 +100,7 @@ def sequence_mot(configs, data_loader, obj_type, sequence_id, gt_bboxes=None, gt
         if visualize:
             frame_visualization(result_pred_bboxes, result_pred_ids, result_pred_states,
                 gt_bboxes[frame_index], gt_ids[frame_index], frame_data.pc, dets=frame_data.dets, name='{:}_{:}'.format(args.name, frame_index))
-                    
+
         # wrap for output
         IDs.append(result_pred_ids)
         result_pred_bboxes = [BBox.bbox2array(bbox) for bbox in result_pred_bboxes]
@@ -111,28 +115,32 @@ def main(name, obj_types, config_path, data_folder, det_data_folder, result_fold
     for obj_type in obj_types:
         summary_folder = os.path.join(result_folder, 'summary', obj_type)
         # simply knowing about all the segments
-        file_names = sorted(os.listdir(os.path.join(data_folder, 'ego_info')))
-        
+        if args.test:
+            file_names = sorted(os.listdir(os.path.join(data_folder, 'ego_info_test')))
+        else:
+            file_names = sorted(os.listdir(os.path.join(data_folder, 'ego_info')))
         # load model configs
         configs = yaml.load(open(config_path, 'r'), Loader=yaml.Loader)
-    
+
         for file_index, file_name in enumerate(file_names[:]):
             if file_index % process != token:
                 continue
-            print('START TYPE {:} SEQ {:} / {:}'.format(obj_type, file_index + 1, len(file_names)))
+            print('START TYPE2 {:} SEQ {:} / {:}'.format(obj_type, file_index + 1, len(file_names)))
             segment_name = file_name.split('.')[0]
 
-            data_loader = NuScenesLoader(configs, [obj_type], segment_name, data_folder, det_data_folder, start_frame)
+            data_loader = NuScenesLoader(configs, [obj_type], segment_name, data_folder, det_data_folder, start_frame,args.test)
+            if not args.test:
+                gt_bboxes, gt_ids = load_gt_bboxes(data_folder, [obj_type], segment_name, test)
+                ids, bboxes, states, types = sequence_mot(configs, data_loader, obj_type, file_index, gt_bboxes, gt_ids, args.visualize)
+            else:
+                ids, bboxes, states, types = sequence_mot(configs, data_loader, obj_type, file_index, None, None, args.visualize)
 
-            gt_bboxes, gt_ids = load_gt_bboxes(data_folder, [obj_type], segment_name)
-            ids, bboxes, states, types = sequence_mot(configs, data_loader, obj_type, file_index, gt_bboxes, gt_ids, args.visualize)
-    
             frame_num = len(ids)
             for frame_index in range(frame_num):
                 id_num = len(ids[frame_index])
                 for i in range(id_num):
                     ids[frame_index][i] = '{:}_{:}'.format(file_index, ids[frame_index][i])
-    
+
             np.savez_compressed(os.path.join(summary_folder, '{}.npz'.format(segment_name)),
                 ids=ids, bboxes=bboxes, states=states, types=types)
 
@@ -152,10 +160,10 @@ if __name__ == '__main__':
     if args.process > 1:
         pool = multiprocessing.Pool(args.process)
         for token in range(args.process):
-            result = pool.apply_async(main, args=(args.name, obj_types, args.config_path, args.data_folder, det_data_folder, 
+            result = pool.apply_async(main, args=(args.name, obj_types, args.config_path, args.data_folder, det_data_folder,
                 result_folder, 0, token, args.process))
         pool.close()
         pool.join()
     else:
-        main(args.name, obj_types, args.config_path, args.data_folder, det_data_folder, 
+        main(args.name, obj_types, args.config_path, args.data_folder, det_data_folder,
             result_folder, args.start_frame, 0, 1)

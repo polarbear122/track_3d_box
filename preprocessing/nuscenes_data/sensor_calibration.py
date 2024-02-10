@@ -9,6 +9,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--raw_data_folder', type=str, default='../../../raw/nuscenes/data/sets/nuscenes/')
 parser.add_argument('--data_folder', type=str, default='../../../datasets/nuscenes/')
 parser.add_argument('--mode', type=str, default='2hz', choices=['20hz', '2hz'])
+parser.add_argument('--test', action='store_true', default=False)
 args = parser.parse_args()
 
 
@@ -57,9 +58,13 @@ def main(nusc, scene_names, root_path, calib_folder, mode):
 
 if __name__ == '__main__':
     print('sensor calib')
-    calib_folder = os.path.join(args.data_folder, 'calib_info')
+    if args.test:
+        calib_folder = os.path.join(args.data_folder, 'calib_info_test')
+        val_scene_names = splits.create_splits_scenes()['test']
+        nusc = NuScenes(version='v1.0-test', dataroot=args.raw_data_folder, verbose=True)
+    else:
+        calib_folder = os.path.join(args.data_folder, 'calib_info')
+        val_scene_names = splits.create_splits_scenes()['val']
+        nusc = NuScenes(version='v1.0-trainval', dataroot=args.raw_data_folder, verbose=True)
     os.makedirs(calib_folder, exist_ok=True)
-    
-    val_scene_names = splits.create_splits_scenes()['val']
-    nusc = NuScenes(version='v1.0-trainval', dataroot=args.raw_data_folder, verbose=True)
     main(nusc, val_scene_names, args.raw_data_folder, calib_folder, args.mode)

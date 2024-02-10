@@ -41,7 +41,7 @@ def nu_array2mot_bbox(b):
 
 
 class NuScenesLoader:
-    def __init__(self, configs, type_token, segment_name, data_folder, det_data_folder, start_frame):
+    def __init__(self, configs, type_token, segment_name, data_folder, det_data_folder, start_frame, test):
         """ initialize with the path to data 
         Args:
             data_folder (str): root path to your data
@@ -51,14 +51,22 @@ class NuScenesLoader:
         self.data_loader = data_folder
         self.det_data_folder = det_data_folder
         self.type_token = type_token
-
-        self.ts_info = json.load(open(os.path.join(data_folder, 'ts_info', '{:}.json'.format(segment_name)), 'r'))
-        self.ego_info = np.load(os.path.join(data_folder, 'ego_info', '{:}.npz'.format(segment_name)), 
-            allow_pickle=True)
-        self.calib_info = np.load(os.path.join(data_folder, 'calib_info', '{:}.npz'.format(segment_name)),
-            allow_pickle=True)
-        self.dets = np.load(os.path.join(det_data_folder, 'dets', '{:}.npz'.format(segment_name)),
-            allow_pickle=True)
+        if test:
+            self.ts_info = json.load(open(os.path.join(data_folder, 'ts_info_test', '{:}.json'.format(segment_name)), 'r'))
+            self.ego_info = np.load(os.path.join(data_folder, 'ego_info_test', '{:}.npz'.format(segment_name)),
+                                    allow_pickle=True)
+            self.calib_info = np.load(os.path.join(data_folder, 'calib_info_test', '{:}.npz'.format(segment_name)),
+                                      allow_pickle=True)
+            self.dets = np.load(os.path.join(det_data_folder, 'dets', '{:}.npz'.format(segment_name)),
+                                allow_pickle=True)
+        else:
+            self.ts_info = json.load(open(os.path.join(data_folder, 'ts_info', '{:}.json'.format(segment_name)), 'r'))
+            self.ego_info = np.load(os.path.join(data_folder, 'ego_info', '{:}.npz'.format(segment_name)),
+                allow_pickle=True)
+            self.calib_info = np.load(os.path.join(data_folder, 'calib_info', '{:}.npz'.format(segment_name)),
+                allow_pickle=True)
+            self.dets = np.load(os.path.join(det_data_folder, 'dets', '{:}.npz'.format(segment_name)),
+                allow_pickle=True)
         self.det_type_filter = True
         
         self.use_pc = configs['data_loader']['pc']

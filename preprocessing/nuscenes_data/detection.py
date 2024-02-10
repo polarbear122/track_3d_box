@@ -9,11 +9,11 @@ parser.add_argument('--det_name', type=str, default='cp')
 parser.add_argument('--file_path', type=str, default='val.json')
 parser.add_argument('--velo', action='store_true', default=False)
 parser.add_argument('--mode', type=str, default='2hz', choices=['20hz', '2hz'])
+parser.add_argument('--test_path', type=str, default='', help='test token_info path')
 args = parser.parse_args()
 
 
-def get_sample_tokens(data_folder, mode):
-    token_folder = os.path.join(data_folder, 'token_info')
+def get_sample_tokens(token_folder, mode):
     file_names = sorted(os.listdir(token_folder))
     result = dict()
     for i, file_name in enumerate(file_names):
@@ -39,7 +39,7 @@ def main(det_name, file_path, detection_folder, data_folder, mode):
     detection_folder = os.path.join(detection_folder, det_name)
     output_folder = os.path.join(detection_folder, 'dets')
     os.makedirs(output_folder, exist_ok=True)
-    
+
     # load the detection file
     print('LOADING RAW FILE')
     f = open(file_path, 'r')
@@ -47,7 +47,11 @@ def main(det_name, file_path, detection_folder, data_folder, mode):
     f.close()
 
     # prepare the scene names and all the related tokens
-    tokens = get_sample_tokens(data_folder, mode)
+    if args.test_path != '':
+        tokens = get_sample_tokens(args.test_path, mode)
+    else:
+        token_folder = os.path.join(data_folder, 'token_info')
+        tokens = get_sample_tokens(token_folder, mode)
     scene_names = sorted(list(tokens.keys()))
     bboxes, inst_types, velos = dict(), dict(), dict()
     for scene_name in scene_names:
@@ -68,7 +72,7 @@ def main(det_name, file_path, detection_folder, data_folder, mode):
             if sample_key in tokens[scene_name]:
                 frame_index = tokens[scene_name].index(sample_key)
                 break
-        
+
         # extract the bboxes and types
         sample_results = det_data[sample_key]
         for sample in sample_results:
