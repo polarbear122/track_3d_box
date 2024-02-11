@@ -9,6 +9,7 @@ parser.add_argument('--name', type=str, default='debug')
 parser.add_argument('--obj_types', type=str, default='car,bus,trailer,truck,pedestrian,bicycle,motorcycle')
 parser.add_argument('--result_folder', type=str, default='../nu_mot_results/')
 parser.add_argument('--data_folder', type=str, default='../datasets/nuscenes/')
+parser.add_argument('--test', action='store_true', default=False)
 args = parser.parse_args()
 
 
@@ -41,8 +42,12 @@ def main(name, obj_types, data_folder, result_folder, output_folder):
     for obj_type in obj_types:
         print('CONVERTING {:}'.format(obj_type))
         summary_folder = os.path.join(result_folder, 'summary', obj_type)
-        file_names = sorted(os.listdir(os.path.join(data_folder, 'ego_info')))
-        token_info_folder = os.path.join(data_folder, 'token_info')
+        if args.test:
+            file_names = sorted(os.listdir(os.path.join(data_folder, 'ego_info_test')))
+            token_info_folder = os.path.join(data_folder, 'token_info_test')
+        else:
+            file_names = sorted(os.listdir(os.path.join(data_folder, 'ego_info')))
+            token_info_folder = os.path.join(data_folder, 'token_info')
     
         results = dict()
         pbar = tqdm(total=len(file_names))

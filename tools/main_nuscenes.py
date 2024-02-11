@@ -130,7 +130,7 @@ def main(name, obj_types, config_path, data_folder, det_data_folder, result_fold
 
             data_loader = NuScenesLoader(configs, [obj_type], segment_name, data_folder, det_data_folder, start_frame,args.test)
             if not args.test:
-                gt_bboxes, gt_ids = load_gt_bboxes(data_folder, [obj_type], segment_name, test)
+                gt_bboxes, gt_ids = load_gt_bboxes(data_folder, [obj_type], segment_name, True)
                 ids, bboxes, states, types = sequence_mot(configs, data_loader, obj_type, file_index, gt_bboxes, gt_ids, args.visualize)
             else:
                 ids, bboxes, states, types = sequence_mot(configs, data_loader, obj_type, file_index, None, None, args.visualize)

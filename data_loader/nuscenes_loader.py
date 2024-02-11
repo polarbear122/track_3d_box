@@ -62,24 +62,24 @@ class NuScenesLoader:
         else:
             self.ts_info = json.load(open(os.path.join(data_folder, 'ts_info', '{:}.json'.format(segment_name)), 'r'))
             self.ego_info = np.load(os.path.join(data_folder, 'ego_info', '{:}.npz'.format(segment_name)),
-                allow_pickle=True)
+                                    allow_pickle=True)
             self.calib_info = np.load(os.path.join(data_folder, 'calib_info', '{:}.npz'.format(segment_name)),
-                allow_pickle=True)
+                                      allow_pickle=True)
             self.dets = np.load(os.path.join(det_data_folder, 'dets', '{:}.npz'.format(segment_name)),
-                allow_pickle=True)
+                                allow_pickle=True)
         self.det_type_filter = True
-        
+
         self.use_pc = configs['data_loader']['pc']
         if self.use_pc:
             self.pcs = np.load(os.path.join(data_folder, 'pc', 'raw_pc', '{:}.npz'.format(segment_name)),
-                allow_pickle=True)
+                               allow_pickle=True)
 
         self.max_frame = len(self.dets['bboxes'])
         self.cur_frame = start_frame
-    
+
     def __iter__(self):
         return self
-    
+
     def __next__(self):
         if self.cur_frame >= self.max_frame:
             raise StopIteration
@@ -98,8 +98,8 @@ class NuScenesLoader:
         result['aux_info'] = dict()
         if 'velos' in list(self.dets.keys()):
             cur_velos = self.dets['velos'][self.cur_frame]
-            result['aux_info']['velos'] = [cur_velos[i] for i in range(len(cur_velos)) 
-                if inst_types[i] in self.type_token]
+            result['aux_info']['velos'] = [cur_velos[i] for i in range(len(cur_velos))
+                                           if inst_types[i] in self.type_token]
         else:
             result['aux_info']['velos'] = None
 
@@ -115,7 +115,7 @@ class NuScenesLoader:
             pc = np.dot(pc, calib_rot.rotation_matrix.T)
             pc += calib_trans
             result['pc'] = utils.pc2world(ego_matrix, pc)
-        
+
         # if 'velos' in list(self.dets.keys()):
         #     cur_frame_velos = self.dets['velos'][self.cur_frame]
         #     result['aux_info']['velos'] = [cur_frame_velos[i] 
@@ -123,11 +123,12 @@ class NuScenesLoader:
         result['aux_info']['is_key_frame'] = True
 
         self.cur_frame += 1
+        # print('result:', result)
         return result
-    
+
     def __len__(self):
         return self.max_frame
-    
+
     def frame_nms(self, dets, det_types, velos, thres):
         frame_indexes, frame_types = nms(dets, det_types, thres)
         result_dets = [dets[i] for i in frame_indexes]
@@ -154,27 +155,27 @@ class NuScenesLoader10Hz:
         self.is_key_frames = [t[1] for t in self.ts_info]
 
         self.token_info = json.load(open(os.path.join(data_folder, 'token_info', '{:}.json'.format(segment_name)), 'r'))
-        self.ego_info = np.load(os.path.join(data_folder, 'ego_info', '{:}.npz'.format(segment_name)), 
-            allow_pickle=True)
+        self.ego_info = np.load(os.path.join(data_folder, 'ego_info', '{:}.npz'.format(segment_name)),
+                                allow_pickle=True)
         self.calib_info = np.load(os.path.join(data_folder, 'calib_info', '{:}.npz'.format(segment_name)),
-            allow_pickle=True)
+                                  allow_pickle=True)
         self.dets = np.load(os.path.join(det_data_folder, 'dets', '{:}.npz'.format(segment_name)),
-            allow_pickle=True)
+                            allow_pickle=True)
         self.det_type_filter = True
-        
+
         self.use_pc = configs['data_loader']['pc']
         if self.use_pc:
             self.pcs = np.load(os.path.join(data_folder, 'pc', 'raw_pc', '{:}.npz'.format(segment_name)),
-                allow_pickle=True)
+                               allow_pickle=True)
 
         self.max_frame = len(self.dets['bboxes'])
         self.selected_frames = [i for i in range(self.max_frame) if self.token_info[i][3]]
         self.cur_selected_index = 0
         self.cur_frame = start_frame
-    
+
     def __iter__(self):
         return self
-    
+
     def __next__(self):
         if self.cur_selected_index >= len(self.selected_frames):
             raise StopIteration
@@ -190,19 +191,19 @@ class NuScenesLoader10Hz:
         inst_types = self.dets['types'][self.cur_frame]
         frame_bboxes = [bboxes[i] for i in range(len(bboxes)) if inst_types[i] in self.type_token]
         result['det_types'] = [inst_types[i] for i in range(len(inst_types)) if inst_types[i] in self.type_token]
-        
+
         result['dets'] = [nu_array2mot_bbox(b) for b in frame_bboxes]
         result['aux_info'] = dict()
         if 'velos' in list(self.dets.keys()):
             cur_velos = self.dets['velos'][self.cur_frame]
-            result['aux_info']['velos'] = [cur_velos[i] for i in range(len(cur_velos)) 
-                if inst_types[i] in self.type_token]
+            result['aux_info']['velos'] = [cur_velos[i] for i in range(len(cur_velos))
+                                           if inst_types[i] in self.type_token]
         else:
             result['aux_info']['velos'] = None
         result['dets'], result['det_types'], result['aux_info']['velos'] = \
             self.frame_nms(result['dets'], result['det_types'], result['aux_info']['velos'], 0.1)
         result['dets'] = [BBox.bbox2array(d) for d in result['dets']]
-        
+
         result['pc'] = None
         if self.use_pc:
             pc = self.pcs[str(self.cur_frame)][:, :3]
@@ -211,7 +212,7 @@ class NuScenesLoader10Hz:
             pc = np.dot(pc, calib_rot.rotation_matrix.T)
             pc += calib_trans
             result['pc'] = utils.pc2world(ego_matrix, pc)
-        
+
         # if 'velos' in list(self.dets.keys()):
         #     cur_frame_velos = self.dets['velos'][self.cur_frame]
         #     result['aux_info']['velos'] = [cur_frame_velos[i] 
@@ -221,10 +222,10 @@ class NuScenesLoader10Hz:
 
         self.cur_selected_index += 1
         return result
-    
+
     def __len__(self):
         return len(self.selected_frames)
-    
+
     def frame_nms(self, dets, det_types, velos, thres):
         frame_indexes, frame_types = nms(dets, det_types, thres)
         result_dets = [dets[i] for i in frame_indexes]

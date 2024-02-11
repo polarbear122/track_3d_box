@@ -41,7 +41,10 @@ def read_center_point_result():
     # path = 'result/centerpoint/detection-test-20hz.json'
 
     # centerpoint检测结果 2hz 6008张  1b9a789e08bb4b7b89eacb2176c70840
-    path = 'result/centerpoint/centerpoint_detect_test/infos_test_10sweeps_withvelo.json'
+    # path = 'result/centerpoint/centerpoint_detect_test/infos_test_10sweeps_withvelo.json'
+
+    # centerpoint 追踪结果 2hz 6008张  1b9a789e08bb4b7b89eacb2176c70840
+    path = 'result/centerpoint/simpletrack2hz_nuscenes_test/mytrack/results.json'
 
     # centerpoint检测结果 #6019 'fd8420396768425eabec9bdddf7e64b6'
     # path = 'preprocessing/nuscenes_data/centerpoint_val_result/center_point_detection.json'
@@ -96,4 +99,4 @@ def read_npz():
 
 
 if __name__ == '__main__':
-    read_npz()
+    read_center_point_result()
