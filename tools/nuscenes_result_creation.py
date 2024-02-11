@@ -3,7 +3,6 @@ from pyquaternion import Quaternion
 from mot_3d.data_protos import BBox, Validity
 from tqdm import tqdm
 
-
 parser = argparse.ArgumentParser()
 parser.add_argument('--name', type=str, default='debug')
 parser.add_argument('--obj_types', type=str, default='car,bus,trailer,truck,pedestrian,bicycle,motorcycle')
@@ -22,17 +21,17 @@ def bbox_array2nuscenes_format(bbox_array):
 
     yaw = bbox_array[3]
     rot_matrix = np.array([[np.cos(yaw), -np.sin(yaw), 0, 0],
-                           [np.sin(yaw),  np.cos(yaw), 0, 0],
-                           [0,            0,           1, 0],
-                           [0,            1,           0, 1]])
+                           [np.sin(yaw), np.cos(yaw), 0, 0],
+                           [0, 0, 1, 0],
+                           [0, 1, 0, 1]])
     q = Quaternion(matrix=rot_matrix)
     rotation = q.q.tolist()
 
     sample_result = {
-        'translation':    translation,
-        'size':           size,
-        'velocity':       velocity,
-        'rotation':       rotation,
+        'translation'   : translation,
+        'size'          : size,
+        'velocity'      : velocity,
+        'rotation'      : rotation,
         'tracking_score': score
     }
     return sample_result
@@ -48,14 +47,15 @@ def main(name, obj_types, data_folder, result_folder, output_folder):
         else:
             file_names = sorted(os.listdir(os.path.join(data_folder, 'ego_info')))
             token_info_folder = os.path.join(data_folder, 'token_info')
-    
+            print('file_names:', data_folder, len(file_names), file_names)
+
         results = dict()
         pbar = tqdm(total=len(file_names))
         for file_index, file_name in enumerate(file_names):
             segment_name = file_name.split('.')[0]
             token_info = json.load(open(os.path.join(token_info_folder, '{:}.json'.format(segment_name)), 'r'))
             mot_results = np.load(os.path.join(summary_folder, '{:}.npz'.format(segment_name)), allow_pickle=True)
-    
+
             ids, bboxes, states, types = \
                 mot_results['ids'], mot_results['bboxes'], mot_results['states'], mot_results['types']
             frame_num = len(ids)
@@ -64,7 +64,7 @@ def main(name, obj_types, data_folder, result_folder, output_folder):
                 results[sample_token] = list()
                 frame_bboxes, frame_ids, frame_types, frame_states = \
                     bboxes[frame_index], ids[frame_index], types[frame_index], states[frame_index]
-                
+
                 frame_obj_num = len(frame_ids)
                 for i in range(frame_obj_num):
                     sample_result = bbox_array2nuscenes_format(frame_bboxes[i])
@@ -75,16 +75,16 @@ def main(name, obj_types, data_folder, result_folder, output_folder):
             pbar.update(1)
         pbar.close()
         submission_file = {
-            'meta': {
+            'meta'   : {
                 'use_camera': False, 'use_lidar': True, 'use_radar': False, 'use_map': False, 'use_external': False
             },
             'results': results
         }
-    
+
         f = open(os.path.join(output_folder, obj_type, 'results.json'), 'w')
         json.dump(submission_file, f)
         f.close()
-    return 
+    return
 
 
 if __name__ == '__main__':
@@ -94,5 +94,5 @@ if __name__ == '__main__':
     for obj_type in obj_types:
         tmp_output_folder = os.path.join(result_folder, 'results', obj_type)
         os.makedirs(tmp_output_folder, exist_ok=True)
-    
+
     main(args.name, obj_types, args.data_folder, result_folder, output_folder)

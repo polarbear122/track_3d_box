@@ -25,4 +25,13 @@ python tools/nuscenes_type_merge.py \
     --name ped_my \
     --result_folder cp_test_track_ans --obj_types pedestrian
 
+#val dataset
+python tools/nuscenes_result_creation.py \
+    --name pedmy \
+    --result_folder ./cp_val_res \
+    --data_folder preprocessing/nuscenes_data/data_dir_2hz/ --obj_types pedestrian
+
+python tools/nuscenes_type_merge.py \
+    --name pedmy \
+    --result_folder cp_val_res --obj_types pedestrian
 python tools/eval.py
