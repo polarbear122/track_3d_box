@@ -39,11 +39,8 @@ def nu_array2mot_bbox(b):
     return mot_bbox
 
 
-def load_gt_bboxes(data_folder, type_token, segment_name, test):
-    if test:
-        gt_info = np.load(os.path.join(data_folder, 'gt_info_test', '{:}.npz'.format(segment_name)), allow_pickle=True)
-    else:
-        gt_info = np.load(os.path.join(data_folder, 'gt_info', '{:}.npz'.format(segment_name)), allow_pickle=True)
+def load_gt_bboxes(data_folder, type_token, segment_name):
+    gt_info = np.load(os.path.join(data_folder, 'gt_info', '{:}.npz'.format(segment_name)), allow_pickle=True)
     ids, inst_types, bboxes = gt_info['ids'], gt_info['types'], gt_info['bboxes']
 
     mot_bboxes = list()
@@ -129,11 +126,11 @@ def main(name, obj_types, config_path, data_folder, det_data_folder, result_fold
             segment_name = file_name.split('.')[0]
 
             data_loader = NuScenesLoader(configs, [obj_type], segment_name, data_folder, det_data_folder, start_frame,args.test)
-            if not args.test:
-                gt_bboxes, gt_ids = load_gt_bboxes(data_folder, [obj_type], segment_name, True)
-                ids, bboxes, states, types = sequence_mot(configs, data_loader, obj_type, file_index, gt_bboxes, gt_ids, args.visualize)
-            else:
+            if args.test:
                 ids, bboxes, states, types = sequence_mot(configs, data_loader, obj_type, file_index, None, None, args.visualize)
+            else:
+                gt_bboxes, gt_ids = load_gt_bboxes(data_folder, [obj_type], segment_name)
+                ids, bboxes, states, types = sequence_mot(configs, data_loader, obj_type, file_index, gt_bboxes, gt_ids, args.visualize)
 
             frame_num = len(ids)
             for frame_index in range(frame_num):

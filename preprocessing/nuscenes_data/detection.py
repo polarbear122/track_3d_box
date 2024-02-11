@@ -9,7 +9,7 @@ parser.add_argument('--det_name', type=str, default='cp')
 parser.add_argument('--file_path', type=str, default='val.json')
 parser.add_argument('--velo', action='store_true', default=False)
 parser.add_argument('--mode', type=str, default='2hz', choices=['20hz', '2hz'])
-parser.add_argument('--test_path', type=str, default='', help='test token_info path')
+parser.add_argument('--test', action='store_true', default=False)
 args = parser.parse_args()
 
 
@@ -47,11 +47,11 @@ def main(det_name, file_path, detection_folder, data_folder, mode):
     f.close()
 
     # prepare the scene names and all the related tokens
-    if args.test_path != '':
-        tokens = get_sample_tokens(args.test_path, mode)
+    if args.test:
+        token_folder = os.path.join(data_folder, 'token_info_test')
     else:
         token_folder = os.path.join(data_folder, 'token_info')
-        tokens = get_sample_tokens(token_folder, mode)
+    tokens = get_sample_tokens(token_folder, mode)
     scene_names = sorted(list(tokens.keys()))
     bboxes, inst_types, velos = dict(), dict(), dict()
     for scene_name in scene_names:
